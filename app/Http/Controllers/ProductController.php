@@ -1,10 +1,12 @@
 <?php 
 
-
 namespace App\Http\Controllers;
+
 use App\Repositories\ProductRepositoryInterface;
 use App\Http\Requests\ProductRequest;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Exception;
 
 class ProductController extends Controller {
     private $productRepository;
@@ -14,27 +16,53 @@ class ProductController extends Controller {
     }
 
     public function index(Request $request) {
-        $products = $this->productRepository->all();
-        return response()->json($products);
+        try {
+            $products = $this->productRepository->all();
+            return response()->json($products, 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to fetch products'], 500);
+        }
     }
 
     public function store(ProductRequest $request) {
-        $product = $this->productRepository->create($request->validated());
-        return response()->json($product, 201);
+        try {
+            $product = $this->productRepository->create($request->validated());
+            return response()->json($product, 201);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to create product'], 500);
+        }
     }
 
     public function show($id) {
-        $product = $this->productRepository->find($id);
-        return response()->json($product);
+        try {
+            $product = $this->productRepository->find($id);
+            return response()->json($product, 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Product not found'], 404);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to fetch product'], 500);
+        }
     }
 
     public function update(ProductRequest $request, $id) {
-        $this->productRepository->update($id, $request->validated());
-        return response()->json(['message' => 'Updated successfully']);
+        try {
+            $this->productRepository->update($id, $request->validated());
+            return response()->json(['message' => 'Updated successfully'], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Product not found'], 404);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to update product'], 500);
+        }
     }
 
     public function destroy($id) {
-        $this->productRepository->delete($id);
-        return response()->json(['message' => 'Deleted successfully']);
+        try {
+            $this->productRepository->delete($id);
+            return response()->json(['message' => 'Deleted successfully'], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Product not found'], 404);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to delete product'], 500);
+        }
     }
 }

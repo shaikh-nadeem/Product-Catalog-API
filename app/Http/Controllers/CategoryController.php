@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Category;
+use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Validation\ValidationException;
+use Exception;
 
 class CategoryController extends Controller
 {   
@@ -17,14 +20,23 @@ class CategoryController extends Controller
     }
     
     public function store(Request $request) {
-        $validatedData = $request->validate([
-            'name' => 'required|string|unique:categories,name|max:255',
-            'parent_category_id' => 'nullable|exists:categories,id',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'name' => 'required|string|max:255',
+                'parent_category_id' => 'nullable|exists:categories,id',
+            ]);
 
-        $category = Category::create($validatedData);
+            $category = Category::create($validatedData);
 
-        return response()->json($category, 201);
+            return response()->json([
+                'message' => 'Category created successfully',
+                'category' => $category
+            ], 201);
+        } catch (ValidationException $e) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $e->errors()], 422);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Something went wrong', 'error' => $e->getMessage()], 500);
+        }
     }
 
     // // Show a single category
